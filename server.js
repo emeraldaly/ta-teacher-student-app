@@ -62,43 +62,43 @@ app.use(bodyParser.urlencoded({
 var Student = connection.define('student', {
   firstname: {
     type: Sequelize.STRING,
-    allowNull: false,
-    validate: {
-      notEmpty: true,
-      len: {
-        args: [1, 15],
-        msg: 'Please enter your first name',
-      }
-    }
+    // allowNull: false,
+    // validate: {
+    //   notEmpty: true,
+    //   len: {
+    //     args: [1, 15],
+    //     msg: 'Please enter your first name',
+    //   }
+    // }
   },
   lastname: {
     type: Sequelize.STRING,
-    allowNull: false,
-    validate: {
-      notEmpty: true,
-      len: {
-        args: [1, 20],
-        msg: 'Please enter your last name',
-      }
-    }
+    // allowNull: false,
+    // validate: {
+    //   notEmpty: true,
+    //   len: {
+    //     args: [1, 20],
+    //     msg: 'Please enter your last name',
+    //   }
+    // }
   },
   email: {
     type: Sequelize.STRING,
-    validate: {
-      notEmpy: true,
-      //isEmail: true,
-      msg: 'Please enter your email address',  
-      }
+    // validate: {
+    //   notEmpy: true,
+    //   //isEmail: true,
+    //   msg: 'Please enter your email address',  
+    //   }
     },
   password: {
     type: Sequelize.STRING,
-    allowNull: false,
-    validate: {
-      len: {
-        args: [5,10],
-        msg: "Your password must be between 5-10 characters"
-      },
-    }
+    // allowNull: false,
+    // validate: {
+    //   len: {
+    //     args: [5,10],
+    //     msg: "Your password must be between 5-10 characters"
+    //   },
+    // }
   }
 }, {
   hooks: {
@@ -115,13 +115,6 @@ app.engine('handlebars', expressHandlebars({
     defaultLayout: 'main'
 }));
 app.set('view engine', 'handlebars');
-
-//check login with db
-app.post('/login', passport.authenticate('local', {
-    successRedirect: '/home',
-    failureRedirect: '/?msg=Login Credentials do not work'
-}));
-
 
 app.get("/", function(req, res){
   res.render('register', {msg: req.query.msg});
@@ -141,6 +134,12 @@ app.post("/register", function(req, res){
     res.redirect('/?msg=' + err.errors[0].message);
   });
 })
+
+//check login with db
+app.post('/login', passport.authenticate('local', {
+    successRedirect: '/',
+    failureRedirect: '/?msg=Login Credentials do not work'
+}));
 
 // database connection via sequelize
 connection.sync().then(function() {
