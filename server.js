@@ -62,43 +62,43 @@ app.use(bodyParser.urlencoded({
 var Student = connection.define('student', {
   firstname: {
     type: Sequelize.STRING,
-    // allowNull: false,
-    // validate: {
-    //   notEmpty: true,
-    //   len: {
-    //     args: [1, 15],
-    //     msg: 'Please enter your first name',
-    //   }
-    // }
+      allowNull: false,
+        validate: {
+          notEmpty: true,
+          len: {
+            args: [1, 15],
+            msg: 'Please enter your first name',
+          }
+        }
   },
   lastname: {
     type: Sequelize.STRING,
-    // allowNull: false,
-    // validate: {
-    //   notEmpty: true,
-    //   len: {
-    //     args: [1, 20],
-    //     msg: 'Please enter your last name',
-    //   }
-    // }
+      allowNull: false,
+        validate: {
+          notEmpty: true,
+          len: {
+            args: [1, 20],
+            msg: 'Please enter your last name',
+          }
+        }
   },
   email: {
     type: Sequelize.STRING,
-    // validate: {
-    //   notEmpy: true,
-    //   //isEmail: true,
-    //   msg: 'Please enter your email address',  
-    //   }
+      allowNull: false,
+        // validate: {
+        // //isEmail: true,
+        // msg: 'Please enter your email address',  
+        // }
     },
   password: {
     type: Sequelize.STRING,
-    // allowNull: false,
-    // validate: {
-    //   len: {
-    //     args: [5,10],
-    //     msg: "Your password must be between 5-10 characters"
-    //   },
-    // }
+      allowNull: false,
+      validate: {
+        len: {
+          args: [5,10],
+          msg: "Your password must be between 5-10 characters"
+        },
+      }
   }
 }, {
   hooks: {
