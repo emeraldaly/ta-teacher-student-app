@@ -11,7 +11,40 @@ var bodyParser = require('body-parser');
 
 var session = require("express-session");
 
+var passport = require('passport');
+var passportLocal = require('passport-local');
+
 var PORT = process.env.PORT || 8080;
+
+app.use(passport.initialize());
+app.use(passport.session());
+
+passport.use(new passportLocal.Strategy(function(username, password, done) {
+  User.findOne({
+    where: {
+      username: username
+    }
+  }).then(function(user){
+    if(user){
+            bcrypt.compare(password, user.dataValues.password, function(err, user) {
+                if (user) {
+                  //if password is correct authenticate the user with cookie
+                  done(null, { id: username, username: username });
+                } else{
+                  done(null, null);
+                }
+            });
+        } else {
+            done(null, null);
+    }
+  });
+}));
+
+passport.serializeUser(function(user, done) {
+  done(null, user.id);
+});
+var bcrypt = require("bcryptjs");
+
 
 app.get('/', function(req, res) {
   res.render("register");
@@ -26,7 +59,7 @@ app.engine('handlebars', exphbs({
 
 app.set('view engine', 'handlebars');
 
-app.use(bodyParser.urlencoded({ extended: true
+app.use(bodyParser.urlencoded({ extended: false
   }));
 
 //create student in db
@@ -71,17 +104,16 @@ var student = connection.define('student', {
           msg: 'Please enter your password',
         }
       }
-    },
-
+    }, 
 });
 
-app.use(session({
+app.use(require('express-session')({
   secret: "my super secret",
   cookie: {
     maxAge: 1000 * 60 * 60 * 24 *30
   },
   saveUninitialized: true,
-  resave: false
+  resave: true
 }));
 app.get("/register", function(req, res){
   res.render("register");
@@ -98,6 +130,8 @@ app.get("/login", function(req, res){
 app.post("/login", function(req,res){
   res.render("students");
 });
+connection.sync().then(function(){
 app.listen(PORT, function() {
   console.log("Listening on port %s", PORT); 
+});
 });
