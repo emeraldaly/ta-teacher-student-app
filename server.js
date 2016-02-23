@@ -1,25 +1,33 @@
+//express for web framework & handlebars for templating
 var express = require('express');
+var app = express();
 var exphbs = require('express-handlebars');
+
+//Sequelize to connect database
 var Sequelize = require('sequelize');
+var connection = new Sequelize('class_app_db', 'root');
+
 var bodyParser = require('body-parser');
+
 var session = require("express-session");
-
-var connection = new Sequelize('class_app_db', 'root', {
-
-});
 
 var PORT = process.env.PORT || 8080;
 
-var app = express();
+app.get('/', function(req, res) {
+  res.render("register");
+});
+app.get('/login', function(req, res) {
+  res.render("home");
+});
 
-app.engine('handlebars', expressHandlebars({
+app.engine('handlebars', exphbs({
   defaultLayout: 'main'
 }));
 
 app.set('view engine', 'handlebars');
-app.use(bodyParser.urlencoded({
+
+app.use(bodyParser.urlencoded({ extended: true
   }));
-}
 
 //create student in db
 var student = connection.define('student', {
@@ -64,9 +72,8 @@ var student = connection.define('student', {
         }
       }
     },
-  }
 
-})
+});
 
 app.use(session({
   secret: "my super secret",
@@ -76,8 +83,7 @@ app.use(session({
   saveUninitialized: true,
   resave: false
 }));
-
-app.get("/", function(req, res){
+app.get("/register", function(req, res){
   res.render("register");
 });
 
@@ -88,7 +94,7 @@ app.post("/register", function(req,res){
 app.get("/login", function(req, res){
   res.render("login");
 });
-//query the db to see if user is student or instructor and render correct page
+// //query the db to see if user is student or instructor and render correct page
 app.post("/login", function(req,res){
   res.render("students");
 });
