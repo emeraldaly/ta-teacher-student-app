@@ -1,31 +1,35 @@
-//express for web framework & handlebars for templating
+//express setup
 var express = require('express');
 var app = express();
-var exphbs = require('express-handlebars');
+var PORT = process.env.PORT || 8080;
 
-//Sequelize to connect database
+//database setup
 var Sequelize = require('sequelize');
 var connection = new Sequelize('class_app_db', 'root');
 
-var bodyParser = require('body-parser');
-
-var session = require("express-session");
-
+//requiring passport last
 var passport = require('passport');
 var passportLocal = require('passport-local');
-
-var PORT = process.env.PORT || 8080;
-
+//middleware init
+app.use(require('express-session')({
+    secret: 'mysecretishere',
+    resave: true,
+    saveUninitialized: true,
+    cookie : { secure : false, maxAge : (1000 * 60 * 60 * 24 * 30) }, // 4 hours
+}));
 app.use(passport.initialize());
 app.use(passport.session());
 
+//passport use methed as callback when being authenticated
 passport.use(new passportLocal.Strategy(function(username, password, done) {
-  User.findOne({
-    where: {
-      username: username
-    }
-  }).then(function(user){
-    if(user){
+    //check password in db
+    User.findOne({
+        where: {
+            username: username
+        }
+    }).then(function(user) {
+        //check password against hash
+        if(user){
             bcrypt.compare(password, user.dataValues.password, function(err, user) {
                 if (user) {
                   //if password is correct authenticate the user with cookie
@@ -36,47 +40,38 @@ passport.use(new passportLocal.Strategy(function(username, password, done) {
             });
         } else {
             done(null, null);
-    }
-  });
+        }
+    });
+
 }));
 
+//change the object used to authenticate to a smaller token, and protects the server from attacks
 passport.serializeUser(function(user, done) {
-  done(null, user.id);
+    done(null, user.id);
 });
+passport.deserializeUser(function(id, done) {
+    done(null, { id: id, username: id })
+});
+
 var bcrypt = require("bcryptjs");
-
-
-app.get('/', function(req, res) {
-  res.render("register");
-});
-app.get('/login', function(req, res) {
-  res.render("home");
-});
-
-app.engine('handlebars', exphbs({
-  defaultLayout: 'main'
+var bodyParser = require('body-parser');
+app.use(bodyParser.urlencoded({
+    extended: false
 }));
 
-app.set('view engine', 'handlebars');
-
-app.use(bodyParser.urlencoded({ extended: false
-  }));
-
-//create student in db
-var student = connection.define('student', {
-  firstName: {
+var Student = connection.define('student', {
+  firstname: {
     type: Sequelize.STRING,
     allowNull: false,
     validate: {
       notEmpty: true,
-    len: {
-      args: [1, 15],
-      msg: 'Please enter your first name',
-          }
+      len: {
+        args: [1, 15],
+        msg: 'Please enter your first name',
+      }
     }
   },
-
-  lastName: {
+  lastname: {
     type: Sequelize.STRING,
     allowNull: false,
     validate: {
@@ -91,47 +86,65 @@ var student = connection.define('student', {
     type: Sequelize.STRING,
     validate: {
       notEmpy: true,
-      isEmail: true,
+      //isEmail: true,
       msg: 'Please enter your email address',  
       }
     },
-    password: {
-      type: Sequelize.STRING,
-      validate: {
-        notEmpty: true,
-        len: {
-          args: [1, 20],
-          msg: 'Please enter your password',
-        }
-      }
-    }, 
+  password: {
+    type: Sequelize.STRING,
+    allowNull: false,
+    validate: {
+      len: {
+        args: [5,10],
+        msg: "Your password must be between 5-10 characters"
+      },
+    }
+  }
+}, {
+  hooks: {
+    beforeCreate: function(input){
+      input.password = bcrypt.hashSync(input.password, 10);
+    }
+  }
 });
 
-app.use(require('express-session')({
-  secret: "my super secret",
-  cookie: {
-    maxAge: 1000 * 60 * 60 * 24 *30
-  },
-  saveUninitialized: true,
-  resave: true
+
+//handlebars setup
+var expressHandlebars = require('express-handlebars');
+app.engine('handlebars', expressHandlebars({
+    defaultLayout: 'main'
 }));
-app.get("/register", function(req, res){
-  res.render("register");
-});
+app.set('view engine', 'handlebars');
 
-app.post("/register", function(req,res){
-  res.render("login");
-});
+//check login with db
+app.post('/login', passport.authenticate('local', {
+    successRedirect: '/home',
+    failureRedirect: '/?msg=Login Credentials do not work'
+}));
 
-app.get("/login", function(req, res){
-  res.render("login");
-});
-// //query the db to see if user is student or instructor and render correct page
-app.post("/login", function(req,res){
-  res.render("students");
-});
-connection.sync().then(function(){
-app.listen(PORT, function() {
-  console.log("Listening on port %s", PORT); 
-});
+
+app.get("/", function(req, res){
+  res.render('register', {msg: req.query.msg});
+})
+
+app.get('/home', function(req, res){
+  res.render('home', {
+    user: req.user,
+    isAuthenticated: req.isAuthenticated()
+  });
+})
+app.post("/register", function(req, res){
+  Student.create(req.body).then(function(result){
+    res.redirect('/?msg=Account created');
+  }).catch(function(err) {
+    console.log(err);
+    res.redirect('/?msg=' + err.errors[0].message);
+  });
+})
+
+// database connection via sequelize
+connection.sync().then(function() {
+  app.listen(PORT, function() {
+      console.log("Listening on:" + PORT)
+  });
 });
